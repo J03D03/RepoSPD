@@ -2,7 +2,7 @@ import json
 import os
 from merge_cpg import merge_cpg,getdirsize, generateLog
 
-root = '/data1/lzr/code/GraphTwin9/release' # Absolute path to `release`
+root = '/RepoSPD' # Absolute path to `release`
 path =            root + '/dataset/example.json' # path of json dataset
 path_ab_file =    root + '/data_preproc/ab_file/' # path of ab_file
 path_repo =       root + '/data_preproc/repo/' # path of repositories

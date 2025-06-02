@@ -10,7 +10,7 @@ import re
 from libs.extract_graphs import ReadFile
 from libs.merge_cpg import importCPG, slice
 
-root = '/data1/lzr/code/GraphTwin9/release'
+root = '/RepoSPD'
 path_ab_file =       root + '/data_preproc/ab_file/'
 path_origin_graphs = root + '/data_preproc/data/'
 path_dep_c =         root + '/add_dependency/dots/'

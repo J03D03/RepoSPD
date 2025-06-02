@@ -11,7 +11,7 @@ import multiprocessing as mp
 
 from tree_sitter import Language, Parser
 
-root = '/data1/lzr/code/GraphTwin9/release'
+root = '/RepoSPD'
 
 json_path =        root + '/dataset/example.json'
 repo_path =        root + '/data_preproc/repo/'
