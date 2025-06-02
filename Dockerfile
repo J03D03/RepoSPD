@@ -1,0 +1,38 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt install -y \
+    python3-pip \
+    python-is-python3 \
+    cflow \
+    openjdk-8-jre \
+    maven \
+    clang \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/lib/x86_64-linux-gnu/libclang-*.so.1 /usr/lib/x86_64-linux-gnu/libclang.so
+
+RUN pip install numpy==1.24.4
+RUN pip install torch==1.11.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
+RUN pip install torchvision==0.12.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html  
+RUN pip install torchaudio==0.11.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
+RUN pip install tree-sitter==0.21.1
+RUN pip install transformers==4.41.2
+RUN pip install pandas
+RUN pip install clang==6.0.0.2
+RUN pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.11.0+cpu.html
+RUN pip install jsonlines
+
+RUN git clone https://github.com/Xin-Cheng-Wen/RepoSPD /RepoSPD
+RUN chmod +x -R /RepoSPD/joern
+WORKDIR /RepoSPD
+
+# "Fix" EMPTY JAR files
+COPY joern/lib/fetch-joern-libs.sh joern/lib/
+RUN cd /RepoSPD/joern/lib && ./fetch-joern-libs.sh
+
+# Set data paths
+RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/data_preproc/data_loader.py
+RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/add_dependency/add_dep.py
+RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/add_dependency/get_depend.py
