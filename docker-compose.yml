@@ -1,0 +1,10 @@
+services:
+  repospd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/RepoSPD
+    working_dir: /RepoSPD
+    stdin_open: true
+    tty: true

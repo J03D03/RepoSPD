@@ -24,15 +24,12 @@ RUN pip install clang==6.0.0.2
 RUN pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-1.11.0+cpu.html
 RUN pip install jsonlines
 
-RUN git clone https://github.com/Xin-Cheng-Wen/RepoSPD /RepoSPD
-RUN chmod +x -R /RepoSPD/joern
+# Create the working directory
+RUN mkdir -p /RepoSPD
 WORKDIR /RepoSPD
 
-# "Fix" EMPTY JAR files
-COPY joern/lib/fetch-joern-libs.sh joern/lib/
-RUN cd /RepoSPD/joern/lib && ./fetch-joern-libs.sh
+# Copy and set up the initialization script
+COPY init.sh /usr/local/bin/init.sh
+RUN chmod +x /usr/local/bin/init.sh
 
-# Set data paths
-RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/data_preproc/data_loader.py
-RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/add_dependency/add_dep.py
-RUN sed -i "s|root = '/data1/lzr/code/GraphTwin9/release'|root = '/RepoSPD'|g" /RepoSPD/add_dependency/get_depend.py
+ENTRYPOINT ["/usr/local/bin/init.sh"]
