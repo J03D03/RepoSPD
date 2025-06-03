@@ -1,8 +1,2 @@
-# Ignore joern directory and all its contents
-joern/
-
-# Ignore data_preproc directory and all its contents
-data_preproc/
-
 # Ignore all .dot files
 *.dot
