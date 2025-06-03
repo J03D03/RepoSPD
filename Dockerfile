@@ -28,8 +28,3 @@ RUN pip install jsonlines
 RUN mkdir -p /RepoSPD
 WORKDIR /RepoSPD
 
-# Copy and set up the initialization script
-COPY init.sh /usr/local/bin/init.sh
-RUN chmod +x /usr/local/bin/init.sh
-
-ENTRYPOINT ["/usr/local/bin/init.sh"]

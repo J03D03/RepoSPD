@@ -1,5 +1,6 @@
 services:
   repospd:
+    container_name: repospd
     build:
       context: .
       dockerfile: Dockerfile
