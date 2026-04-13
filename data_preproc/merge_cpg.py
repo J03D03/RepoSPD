@@ -1,6 +1,8 @@
-import os, operator, sys
-from collections import defaultdict 
+import os, operator, sys, logging
+from collections import defaultdict
 import copy
+
+logger = logging.getLogger(__name__)
 
 # This class represents a directed graph 
 # using adjacency list representation 
@@ -134,6 +136,7 @@ def importCPG(path):
         content = open(path+'/'+f, errors='ignore').read()
         if 'LINE_NUMBER' not in content:	continue
         lines = content[:-1].split('--------\n')
+        if len(lines) < 3:	continue
         funcName = lines[0][len('digraph'):-1]
         if len(funcName) == 0:	continue
 
@@ -268,11 +271,13 @@ def slice(Anodes, Aedges, Bnodes, Bedges, path, nodeIDstart):
 
     for Be in Bedges:
         nodeId1, nodeId2, edgeInfo = edgeAttr(Be)
-        newBedges.append((dictB[nodeId1], dictB[nodeId2], edgeInfo, 0))
+        if nodeId1 in dictB and nodeId2 in dictB:
+            newBedges.append((dictB[nodeId1], dictB[nodeId2], edgeInfo, 0))
 
     for Ae in Aedges:
         nodeId1, nodeId2, edgeInfo = edgeAttr(Ae)
-        newAedges.append((dictA[nodeId1], dictA[nodeId2], edgeInfo, 0))
+        if nodeId1 in dictA and nodeId2 in dictA:
+            newAedges.append((dictA[nodeId1], dictA[nodeId2], edgeInfo, 0))
 
     CtxEdges = list(set(newAedges)&set(newBedges))
     PreEdges = []
@@ -461,7 +466,7 @@ def slice(Anodes, Aedges, Bnodes, Bedges, path, nodeIDstart):
             if n[0] == e[1]:
                 flag_found += 1
         if flag_found < 2:
-            print('!!!Oops, missing nodes!!!!!', e)
+            logger.debug('missing nodes (pre-merge): %s', e)
 
     slimNodes = []
     slimEdges = []
@@ -542,10 +547,16 @@ def slice(Anodes, Aedges, Bnodes, Bedges, path, nodeIDstart):
                         oldNum_newNum[str(int(lineNum_list[i])+j)] = lineNum_list[i]
                         flag_cnt += 1
                 else:
-                    if lineNum_list[i][0]+str(int(lineNum_list[i][1:])+j) in lineNum_list and \
-                        lineNum_code[lineNum_list[i][0]+str(int(lineNum_list[i][1:])+j)] in lineNum_code[lineNum_list[i]]:
-                        oldNum_newNum[lineNum_list[i][0]+str(int(lineNum_list[i])+j)] = lineNum_list[i]
-                        flag_cnt += 1
+                    try:
+                        suffix = lineNum_list[i][0]
+                        num = int(lineNum_list[i][1:])
+                        candidate = suffix+str(num+j)
+                        if candidate in lineNum_list and \
+                            lineNum_code[candidate] in lineNum_code[lineNum_list[i]]:
+                            oldNum_newNum[candidate] = lineNum_list[i]
+                            flag_cnt += 1
+                    except (ValueError, IndexError):
+                        pass
         i += (flag_cnt + 1)
 
     for line_num in list(set(oldNum_newNum.values())):
@@ -630,7 +641,7 @@ def slice(Anodes, Aedges, Bnodes, Bedges, path, nodeIDstart):
             if n[0] == e[1]:
                 flag_found += 1
         if flag_found < 2:
-            print('Oops, missing nodes!!!!!', e)
+            logger.debug('missing nodes (post-slim): %s', e)
 
     # remove floating nodes
     for n in slimNodes[:]:
@@ -743,8 +754,8 @@ def generateLog(path):
 
     if len(allEdges) > 0 or len(allNodes) > 0:
         out_path = path.replace('ab_file', 'data')
-        print(out_path)
-        if not os.path.exists(out_path):	
+        logger.debug('merged: %s', out_path)
+        if not os.path.exists(out_path):
             os.system('mkdir '+out_path)
         f = open(out_path+'/out_slim_ninf_noast_n1_w.log', 'w+')
         f.write('\n'.join(map(str, allEdges)))
@@ -764,8 +775,14 @@ def generateLog(path):
     return 0
 
 def getdirsize(path):
-    a_files = os.listdir(path+'/a/')
-    b_files = os.listdir(path+'/b/')
+    try:
+        a_files = os.listdir(path+'/a/')
+    except (NotADirectoryError, FileNotFoundError):
+        a_files = []
+    try:
+        b_files = os.listdir(path+'/b/')
+    except (NotADirectoryError, FileNotFoundError):
+        b_files = []
 
     size1 = 0
     for a in a_files:

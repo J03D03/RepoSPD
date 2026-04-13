@@ -1,0 +1,122 @@
+services:
+    # Stage 0: Convert external JSONL + CSV splits into pipeline JSON
+    0-prepare:
+        cpuset: ${CPUSET}
+        container_name: repospd-prepare
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        volumes:
+            - .:/RepoSPD
+        working_dir: /RepoSPD
+        command: python3 prepare_dataset.py
+
+    # Stage 1: Clone repos and extract pre/post patch files
+    1-clone:
+        cpuset: ${CPUSET}
+        container_name: repospd-clone
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        environment:
+            - CPU_LIMIT=${CPU_LIMIT}
+        volumes:
+            - .:/RepoSPD
+        working_dir: /RepoSPD
+        command: bash -c "cd /RepoSPD/data_preproc && python3 data_loader.py clone"
+        depends_on:
+            0-prepare:
+                condition: service_completed_successfully
+
+    # Stage 2: Generate and merge CPGs via Joern
+    2-cpg:
+        cpuset: ${CPUSET}
+        container_name: repospd-cpg
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        environment:
+            - CPU_LIMIT=${CPU_LIMIT}
+        volumes:
+            - .:/RepoSPD
+        tmpfs:
+            - /tmp:exec,mode=777,size=100G
+        working_dir: /RepoSPD
+        command: >-
+            bash -c "
+              chmod +x -R /RepoSPD/joern 2>/dev/null || true &&
+              (cd /RepoSPD/joern/lib && ./fetch-joern-libs.sh) &&
+              cd /RepoSPD/data_preproc && python3 data_loader.py cpg
+            "
+        depends_on:
+            1-clone:
+                condition: service_completed_successfully
+
+    # Stage 3: Add repository-level function call dependencies
+    3-dependency:
+        cpuset: ${CPUSET}
+        container_name: repospd-dependency
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        environment:
+            - CPU_LIMIT=${CPU_LIMIT}
+        volumes:
+            - .:/RepoSPD
+        tmpfs:
+            - /tmp:exec,mode=777,size=100G
+        working_dir: /RepoSPD
+        command: bash -c "cd add_dependency && python3 get_depend.py && python3 add_dep.py"
+        depends_on:
+            2-cpg:
+                condition: service_completed_successfully
+
+    # Stage 4: Organize RepoCPG logs into train/valid/test split directories
+    4-organize:
+        cpuset: ${CPUSET}
+        container_name: repospd-organize
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        volumes:
+            - .:/RepoSPD
+        working_dir: /RepoSPD
+        command: python3 organize_splits.py
+        depends_on:
+            3-dependency:
+                condition: service_completed_successfully
+
+    # Stage 5: Train the model (requires GPU)
+    5-train:
+        cpus: ${CPU_LIMIT}
+        container_name: repospd-train
+        build:
+            context: .
+            args:
+                UID: ${UID:-1000}
+                GID: ${GID:-100}
+        volumes:
+            - .:/RepoSPD
+        working_dir: /RepoSPD
+        command: python3 run.py
+        depends_on:
+            4-organize:
+                condition: service_completed_successfully
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: cdi
+                          device_ids:
+                              - nvidia.com/gpu=all
+                          capabilities: [gpu]

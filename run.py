@@ -473,7 +473,7 @@ def train(args, model, config, tokenizer):
                                                 num_training_steps=args.max_steps)
     criterion = torch.nn.CrossEntropyLoss()
     
-    best_acc, best_f1, best_recall, best_precision, best_fpr = 0.0,0.0,0.0,0.0,1.0
+    best_acc, best_f1, best_recall, best_precision, best_fpr, best_epoch = 0.0,0.0,0.0,0.0,1.0,-1
 
     logger.info("***** Running training *****")
     logger.info("Num examples = %d", train_data_size)
@@ -490,6 +490,11 @@ def train(args, model, config, tokenizer):
 
         if best_acc < result['accuracy']:
             best_acc = result['accuracy']
+            best_f1 = result['f1']
+            best_precision = result['precision']
+            best_recall = result['recall']
+            best_fpr = result['fpr']
+            best_epoch = cur_epoch
             logger.info(f'best_accuracy change into {best_acc} at epoch {cur_epoch}')
             print(f'best_accuracy change into {best_acc} at epoch {cur_epoch}')
             acc = result['accuracy']
@@ -498,8 +503,10 @@ def train(args, model, config, tokenizer):
         logger.info(RunTime())
 
     logger.info('*********************************************************************************************')
-    logger.info(f'best acc in training is {round(best_acc,4)}')
+    logger.info(f'Best validation results (epoch {best_epoch}):')
+    logger.info(f'  accuracy={round(best_acc,4)}, precision={round(best_precision,4)}, recall={round(best_recall,4)}, f1={round(best_f1,4)}, fpr={round(best_fpr,4)}')
     logger.info('*********************************************************************************************')
+    print(f'Best validation results (epoch {best_epoch}): acc={round(best_acc,4)}, precision={round(best_precision,4)}, recall={round(best_recall,4)}, f1={round(best_f1,4)}, fpr={round(best_fpr,4)}')
 
     logger.info(f'save the last model model_spi_epoch{epoch}_size{train_data_size}_dim{dim_features}_nr{num_relations}_last.pth')
     torch.save(last_model.state_dict(), mdlsPath+f'/model_spi_epoch{epoch}_size{train_data_size}_dim{dim_features}_nr{num_relations}_last.pth')
@@ -508,7 +515,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     ## Required parameters
-    parser.add_argument("--model_name_or_path", default='./models', type=str,
+    parser.add_argument("--model_name_or_path", default='microsoft/unixcoder-base', type=str,
                         help="The model checkpoint for weights initialization.")
     parser.add_argument("--block_size", default=512, type=int,
                         help="Optional input sequence length after tokenization.")
@@ -557,7 +564,7 @@ def main():
 
     if args.do_train:
         train(args, model, config, tokenizer)
-    if args.do_test:
+    if args.do_train or args.do_test:
         test(args, model, config, tokenizer)
 
 if __name__ == '__main__':

@@ -1,0 +1,15 @@
+{
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        "build",
+        "dist",
+        ".venv",
+        "data_preproc",
+        "datasets",
+        "dataset",
+        "joern",
+        "models",
+        "Results"
+    ]
+}

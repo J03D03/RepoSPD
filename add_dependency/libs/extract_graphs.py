@@ -80,6 +80,9 @@ def main():
             # =====================================================
     return
 
+_RE_EDGE = re.compile(r'\(-\d+, -\d+, [\'\"].*[\'\"], -?\d\)')
+_RE_NODE = re.compile(r'\(-\d+, -?\d, \'[CD-]+\', \d+, \'[-+]?\d+\', [\'\"].*[\'\"]\)')
+
 def ParseEdge(filename, line):
 
     if _DEBUG_: print(line, end='')
@@ -87,8 +90,7 @@ def ParseEdge(filename, line):
     if '\n' == line:
         return []
 
-    pattern = r'\(-\d+, -\d+, [\'\"].*[\'\"], -?\d\)'
-    contents = re.findall(pattern, line)
+    contents = _RE_EDGE.findall(line)
     if 0 == len(contents):
         if _ERROR_: print('[ERROR] <ParseEdge> Edge does not match the format, para:', filename, line)
         return []
@@ -116,8 +118,7 @@ def ParseNode(filename, line):
     if '\n' == line:
         return []
 
-    pattern = r'\(-\d+, -?\d, \'[CD-]+\', \d+, \'[-+]?\d+\', [\'\"].*[\'\"]\)'
-    contents = re.findall(pattern, line)
+    contents = _RE_NODE.findall(line)
     if 0 == len(contents):
         if _ERROR_: print('[ERROR] <ParseNode> Node does not match the format, para:', filename, line)
         return []
@@ -147,7 +148,6 @@ def ReadFile(filename):
     '''
 
     # read lines from the file.
-    print('[INFO] <ReadFile> Read data from:', filename)
     fp = open(filename, encoding='utf-8', errors='ignore')
     lines = fp.readlines()
     fp.close()
@@ -204,9 +204,10 @@ def ReadFile(filename):
             # Error:
             if _ERROR_: print('[ERROR] <ReadFile> Neither an edge or a node, para:', filename, line)
 
-    print(f'[INFO] <ReadFile> Read PatchCPG (#node: {len(nodesData)}, #edge: {len(edgesData)}), ', end='')
-    print(f'PreCPG (#node: {len(nodesData0)}, #edge: {len(edgesData0)}), ', end='')
-    print(f'PostCPG (#node: {len(nodesData1)}, #edge: {len(edgesData1)}).' + RunTime())
+    if _DEBUG_:
+        print(f'[INFO] <ReadFile> Read PatchCPG (#node: {len(nodesData)}, #edge: {len(edgesData)}), ', end='')
+        print(f'PreCPG (#node: {len(nodesData0)}, #edge: {len(edgesData0)}), ', end='')
+        print(f'PostCPG (#node: {len(nodesData1)}, #edge: {len(edgesData1)}).' + RunTime())
     if _DEBUG_:
         print(nodesData)
         print(edgesData)
