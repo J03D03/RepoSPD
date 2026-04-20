@@ -279,7 +279,7 @@ def GetDataset(tokenizer, args, config, path=None, tuplePath=None):
                 nodeAttr = torch.tensor(graph['nodeAttr'], dtype=torch.float)
                 edgeAttr = torch.tensor(graph['edgeAttr'], dtype=torch.float)
 
-                if(len(nodeAttr.tolist()) > 3000):
+                if(nodeAttr.dim() == 0 or nodeAttr.shape[0] > 3000):
                     logger.debug('delete data ' + commit_id)
                     continue
                     
