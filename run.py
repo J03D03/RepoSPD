@@ -86,6 +86,7 @@ def convert_examples_to_features(seq,tokenizer,args):
     filtered_lines = [line for line in code_lines if not line.startswith('index')]
     processed_lines = [process_line(line) for line in filtered_lines]
     code = '\n'.join(processed_lines)
+    code = code.encode('utf-8', errors='replace').decode('utf-8')
     code_tokens = tokenizer.tokenize(code)[:args.block_size-4]
     source_tokens = [tokenizer.cls_token,"<encoder_only>",tokenizer.sep_token] + code_tokens + [tokenizer.sep_token]
     source_ids = tokenizer.convert_tokens_to_ids(source_tokens)
