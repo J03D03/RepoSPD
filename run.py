@@ -418,11 +418,19 @@ def evaluate(model, eval_dataset):
 
 def test(args, model, config, tokenizer):
 
-    path = './saved_models/model_spi_epoch10_size8_dim768_nr20_acc.pth'
-
     if not os.path.exists(mdlsPath):
         os.mkdir(mdlsPath)
 
+    acc_models = sorted(
+        [f for f in os.listdir(mdlsPath) if f.endswith('_acc.pth')],
+        key=lambda f: os.path.getmtime(os.path.join(mdlsPath, f)),
+        reverse=True,
+    )
+    if not acc_models:
+        print('ERROR: No best-accuracy model found in saved_models/', flush=True)
+        return
+    path = os.path.join(mdlsPath, acc_models[0])
+    print(f'Loading best model: {path}', flush=True)
     model.load_state_dict(torch.load(path))
 
     testDataset, files = GetDataset(tokenizer, args, config, path=dataPath+'/test', tuplePath = cacheJsonl.format('test'))
