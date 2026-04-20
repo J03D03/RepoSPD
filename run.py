@@ -123,7 +123,7 @@ def extractgraphs(path=dataPath):
                     nodes = extract_graphs.ProcNodes(nodes, 'PatchCPG')
                     nodes0 = extract_graphs.ProcNodes(nodes0, 'PreCPG')
                     nodes1 = extract_graphs.ProcNodes(nodes1, 'PostCPG')
-                label = [labelMap[root[-10:]]]
+                label = [labelMap[os.path.basename(root)]]
                 np.savez(savename, nodes=nodes, edges=edges, nodes0=nodes0, edges0=edges0, nodes1=nodes1, edges1=edges1,
                          label=label, dtype=object)
     return
@@ -263,9 +263,9 @@ def GetDataset(tokenizer, args, config, path=None, tuplePath=None):
 
         for file in filelist:
             
-            commit_id = root[-10:]
-            
-            if commit_id in indexErr_list:
+            commit_id = os.path.basename(root)
+
+            if commit_id[-10:] in indexErr_list:
                 continue
 
             if file[-7:] == '_np.npz':
